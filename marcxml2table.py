@@ -1,15 +1,26 @@
-import sys
 import re
 import xml.etree.ElementTree as ET
+from argparse import ArgumentParser
 from collections import Counter
-from rich.pretty import pprint
-
-xml_iterator = ET.iterparse(sys.argv[1])
-output_file = sys.argv[2]
-filter_ = sys.argv[3].split()
+from pathlib import Path
 
 
-def parse_record(fields, record):
+parser = ArgumentParser(
+    description="Convert Marc XML to tsv table where every subfield is a separate column."
+)
+parser.add_argument(
+    "input_xml", type=Path, help="File containing the MARCXML Data. No namespaces!"
+)
+parser.add_argument("output_tsv", type=Path, help="File to write the tab separated file to.")
+parser.add_argument(
+    "filter",
+    type=str,
+    help="Blank-separated list of fields to be exported; 'leader 001 245 856 912'",
+)
+args = parser.parse_args()
+
+
+def parse_record(fields: list, record: ET.Element) -> dict:
     record_dict = {}
     for field in fields:
         if field == "leader":
@@ -38,32 +49,38 @@ def parse_record(fields, record):
                         f" ({i})",
                     )
                 )
-                subfield_distribution = Counter([i.attrib.get("code") for i in datafield])
+                subfield_distribution = Counter(
+                    [i.attrib.get("code") for i in datafield]
+                )
                 uniques = [k for k, v in subfield_distribution.items() if v == 1]
                 multiple = [k for k, v in subfield_distribution.items() if v > 1]
-
-                print(subfield_distribution, uniques, multiple)
 
                 for sf_code in uniques:
                     sf = datafield.find(f"./subfield[@code='{sf_code}']")
                     record_dict["".join((field_name, " ", sf_code, "No:0"))] = sf.text
 
                 for sf_code in multiple:
-                    for i, occurence in enumerate(datafield.findall(f"./subfield[@code='{sf_code}']")):
-                        record_dict["".join((field_name, " ", sf_code, f"No:{i}"))] = occurence.text
+                    for i, occurence in enumerate(
+                        datafield.findall(f"./subfield[@code='{sf_code}']")
+                    ):
+                        record_dict[
+                            "".join((field_name, " ", sf_code, f"No:{i}"))
+                        ] = occurence.text
     return record_dict
 
 
 list_of_dics = list()
-for _, element in xml_iterator:
+for _, element in ET.iterparse(args.input_xml):
     if element.tag == "record":
-        list_of_dics.append(parse_record(filter_, element))
+        list_of_dics.append(parse_record(args.filter.split(), element))
+
 
 header = sorted(list(set((k for dic in list_of_dics for k in dic))))
-header_formatted = "\t".join([re.sub(r"No:\d+", "", i) for i in header]).replace("000leader", "leader")
+header_formatted = "\t".join([re.sub(r"No:\d+$", "", i) for i in header]).replace(
+    "000leader", "leader"
+)
 
-
-with open(output_file, "w", encoding="utf-8") as f:
+with open(args.output_tsv, "w", encoding="utf-8") as f:
     f.write(header_formatted)
     f.write("\n")
     for dic in list_of_dics:
@@ -75,5 +92,3 @@ with open(output_file, "w", encoding="utf-8") as f:
                 row_list.append("")
         f.write("\t".join(row_list))
         f.write("\n")
-
-
