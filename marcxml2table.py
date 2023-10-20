@@ -1,4 +1,5 @@
 import re
+import csv
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 from collections import Counter
@@ -11,7 +12,9 @@ parser = ArgumentParser(
 parser.add_argument(
     "input_xml", type=Path, help="File containing the MARCXML Data. No namespaces!"
 )
-parser.add_argument("output_tsv", type=Path, help="File to write the tab separated file to.")
+parser.add_argument(
+    "output_tsv", type=Path, help="File to write the tab separated file to."
+)
 parser.add_argument(
     "filter",
     type=str,
@@ -80,15 +83,10 @@ header_formatted = "\t".join([re.sub(r"No:\d+$", "", i) for i in header]).replac
     "000leader", "leader"
 )
 
-with open(args.output_tsv, "w", encoding="utf-8") as f:
-    f.write(header_formatted)
-    f.write("\n")
+with open(args.output_tsv, "w", encoding="utf-8") as csvfile:
+    csvfile.write(header_formatted + "\n")
+    writer = csv.DictWriter(
+        csvfile, fieldnames=header, quoting=csv.QUOTE_ALL, delimiter="\t", quotechar="'"
+    )
     for dic in list_of_dics:
-        row_list = list()
-        for col in header:
-            if dic.get(col):
-                row_list.append(dic.get(col))
-            else:
-                row_list.append("")
-        f.write("\t".join(row_list))
-        f.write("\n")
+        writer.writerow(dic)
