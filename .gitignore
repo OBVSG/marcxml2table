@@ -1,1 +1,3 @@
 *.tsv
+*.xml
+.~lock*
