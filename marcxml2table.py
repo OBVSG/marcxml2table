@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "filter",
     type=str,
-    help="Blank-separated list of fields to be exported; 'leader 001 245 856 912'",
+    help="Blank-separated list of fields to be exported; 'leader 001 245 85640 912'. To filter fields with specific indicators, use a 5-digit marc field. Use a # sign for blank and a * sign as wildcard for any indicator.",
 )
 args = parser.parse_args()
 
@@ -41,8 +41,14 @@ def parse_record(fields: list, record: ET.Element) -> dict:
             record_dict[field] = res
 
         else:
-            datafields = record.findall(f"./datafield[@tag='{field}']")
-
+            xpath = f"./datafield[@tag='{field[:3]}']"
+            if len(field) == 5:
+                field = field.replace("#", " ")
+                if field[3] != "*":
+                    xpath = xpath + f"[@ind1='{field[3]}']"
+                if field[4] != "*":
+                    xpath = xpath + f"[@ind2='{field[4]}']"
+            datafields = record.findall(xpath)
             for i, datafield in enumerate(datafields, start=1):
                 field_name = "".join(
                     (
