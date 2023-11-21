@@ -55,7 +55,7 @@ def parse_record(fields: list, record: ET.Element) -> dict:
                         datafield.attrib.get("tag"),
                         datafield.attrib.get("ind1").replace(" ", "#"),
                         datafield.attrib.get("ind2").replace(" ", "#"),
-                        f" ({i})",
+                        f" [{i}]",
                     )
                 )
                 subfield_distribution = Counter(
