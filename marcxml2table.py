@@ -89,8 +89,8 @@ header_formatted = "\t".join([re.sub(r"No:\d+$", "", i) for i in header]).replac
     "000leader", "leader"
 )
 
-with open(args.output_tsv, "w", encoding="utf-8") as csvfile:
-    csvfile.write(header_formatted + "\n")
+with open(args.output_tsv, "w", encoding="utf-8", newline="") as csvfile:
+    csvfile.write(header_formatted + "\r\n")
     writer = csv.DictWriter(
         csvfile, fieldnames=header, quoting=csv.QUOTE_ALL, delimiter="\t", quotechar="'"
     )
