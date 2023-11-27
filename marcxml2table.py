@@ -23,6 +23,15 @@ parser.add_argument(
 args = parser.parse_args()
 
 
+def sort_key(field: str) -> tuple:
+    field_splitted = field.split()
+    field_number = field_splitted[0]
+    field_occurence = int(field_splitted[1].replace("[", "").replace("]", ""))
+    subfield_code = field_splitted[2].split("No:")[0]
+    subfield_number = int(field_splitted[2].split("No:")[1])
+    return (field_number, field_occurence, subfield_code, subfield_number)
+
+
 def parse_record(fields: list, record: ET.Element) -> dict:
     record_dict = {}
     for field in fields:
@@ -31,14 +40,14 @@ def parse_record(fields: list, record: ET.Element) -> dict:
             res = ""
             if leader is not None:
                 res = leader.text
-            record_dict["000leader"] = res
+            record_dict["000 [1] CFNo:0"] = res
 
         if field[0:2] == "00" and int(field[2]) <= 9:
             controlfield = record.find(f"./controlfield[@tag='{field}']")
             res = ""
             if controlfield is not None:
                 res = controlfield.text
-            record_dict[field] = res
+            record_dict[" ".join((field, "[1] CFNo:0"))] = res
 
         else:
             xpath = f"./datafield[@tag='{field[:3]}']"
@@ -84,15 +93,26 @@ for _, element in ET.iterparse(args.input_xml):
         list_of_dics.append(parse_record(args.filter.split(), element))
 
 
-header = sorted(list(set((k for dic in list_of_dics for k in dic))))
-header_formatted = "\t".join([re.sub(r"No:\d+$", "", i) for i in header]).replace(
-    "000leader", "leader"
-)
+header = list(set((k for dic in list_of_dics for k in dic)))
+sorted_header = sorted(header, key=sort_key)
+header_formatted = list()
+for field in sorted_header:
+    if field.startswith("000"):
+        field = field.replace("000", "leader", 1)
+    if "CFNo:" in field:
+        header_formatted.append(field.split()[0])
+    else:
+        header_formatted.append(re.sub(r"No:\d+$", "", field))
+
 
 with open(args.output_tsv, "w", encoding="utf-8", newline="") as csvfile:
-    csvfile.write(header_formatted + "\r\n")
+    csvfile.write("\t".join(header_formatted) + "\r\n")
     writer = csv.DictWriter(
-        csvfile, fieldnames=header, quoting=csv.QUOTE_ALL, delimiter="\t", quotechar="'"
+        csvfile,
+        fieldnames=sorted_header,
+        quoting=csv.QUOTE_ALL,
+        delimiter="\t",
+        quotechar="'",
     )
     for dic in list_of_dics:
         writer.writerow(dic)
