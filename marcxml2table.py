@@ -28,8 +28,8 @@ def sort_key(field: str) -> tuple:
     field_number = field_splitted[0]
     field_occurence = int(field_splitted[1].replace("[", "").replace("]", ""))
     subfield_code = field_splitted[2].split("No:")[0]
-    subfield_number = int(field_splitted[2].split("No:")[1])
-    return (field_number, field_occurence, subfield_code, subfield_number)
+    subfield_occurence = int(field_splitted[2].split("No:")[1])
+    return (field_number, field_occurence, subfield_code, subfield_occurence)
 
 
 def parse_record(fields: list, record: ET.Element) -> dict:
