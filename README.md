@@ -21,13 +21,18 @@ A Marc XML file for input. It holds bibliographic, authorities or holdings recor
 
 A tab separated values file to write the output to.
 
-### List of fields to extract: "001 035 85640"
+### List of fields to extract: "001 035 85640 983**a 98401abc"
 
 A blank seperated list of fields to be converted. The LDR/Leader field should be written as `leader`.
 
-To convert only Marc fields with specific indicators, use the five character notation.
+To convert only Marc fields with specific indicators, use the five character notation. Add subfields after the 5-digit notation to limit output only for those subfields.
 
 E.g., `85640` only outputs Marc 856 fields with first indicator = 4 and second indicator = 0.
+
+E.g., `983**a` only outputs Marc 983 $a fields with any first and second indicator.
+
+E.g., `98401abc` only outputs Marc 984 $a, $b, $c fields with with first indicator = 0 and second indicator = 1.
+
 
 For any indicator, use an asterisk sign `*` as wildcard. For the blank indicator, use the hash sign `#`.
 

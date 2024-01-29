@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "filter",
     type=str,
-    help="Blank-separated list of fields to be exported; 'leader 001 245 85640 912'. To filter fields with specific indicators, use a 5-digit marc field. Use a # sign for blank and a * sign as wildcard for any indicator.",
+    help="Blank-separated list of fields to be exported; 'leader 001 245 85640 912'. To filter fields with specific indicators, use a 5-digit marc field. Use a # sign for blank and a * sign as wildcard for any indicator. To filter for specific subfield, append them to the 5-digit field notation: 85640u will search for $u of 85640",
 )
 args = parser.parse_args()
 
@@ -34,6 +34,7 @@ def sort_key(field: str) -> tuple:
 
 def parse_record(fields: list, record: ET.Element) -> dict:
     record_dict = {}
+    has_sf_filter = False
     for field in fields:
         if field == "leader":
             leader = record.find("./leader")
@@ -51,12 +52,15 @@ def parse_record(fields: list, record: ET.Element) -> dict:
 
         else:
             xpath = f"./datafield[@tag='{field[:3]}']"
-            if len(field) == 5:
+            if len(field) >= 5:
                 field = field.replace("#", " ")
                 if field[3] != "*":
                     xpath = xpath + f"[@ind1='{field[3]}']"
                 if field[4] != "*":
                     xpath = xpath + f"[@ind2='{field[4]}']"
+            if len(field) >= 6:
+                has_sf_filter = True
+                subfields = list(field[5:])
             datafields = record.findall(xpath)
             for i, datafield in enumerate(datafields, start=1):
                 field_name = "".join(
@@ -67,9 +71,14 @@ def parse_record(fields: list, record: ET.Element) -> dict:
                         f" [{i}]",
                     )
                 )
-                subfield_distribution = Counter(
-                    [i.attrib.get("code") for i in datafield]
-                )
+                if has_sf_filter:
+                    subfield_distribution = Counter(
+                        [i.attrib.get("code") for i in datafield if i.attrib.get("code") in subfields]
+                    )
+                else:
+                    subfield_distribution = Counter(
+                        [i.attrib.get("code") for i in datafield]
+                    )
                 uniques = [k for k, v in subfield_distribution.items() if v == 1]
                 multiple = [k for k, v in subfield_distribution.items() if v > 1]
 
