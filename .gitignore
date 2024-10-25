@@ -1,3 +1,4 @@
 *.tsv
 *.xml
-.~lock*data/
+.~lock*
+data/
