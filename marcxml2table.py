@@ -20,6 +20,12 @@ parser.add_argument(
     type=str,
     help="Blank-separated list of fields to be exported; 'leader 001 245 85640 912'. To filter fields with specific indicators, use a 5-digit marc field. Use a # sign for blank and a * sign as wildcard for any indicator. To filter for specific subfield, append them to the 5-digit field notation: 85640u will search for $u of 85640",
 )
+
+parser.add_argument(
+    "--parse_hol",
+    action="store_true",
+    help="option to parse marc holdings records as retrieved via Alma REST API. With this options active, the holdings id will automatically be exported since it is not part of the holdings record itself",
+)
 args = parser.parse_args()
 
 
@@ -35,6 +41,11 @@ def sort_key(field: str) -> tuple:
 def parse_record(fields: list, record: ET.Element) -> dict:
     record_dict = {}
     has_sf_filter = False
+    if args.parse_hol:
+        uri = record.attrib.get("link")
+        record_dict["000_uri [1] CFNo:0"] = uri.split("/")[-1]
+        record = record.find("./record")
+
     for field in fields:
         if field == "leader":
             leader = record.find("./leader")
@@ -73,7 +84,11 @@ def parse_record(fields: list, record: ET.Element) -> dict:
                 )
                 if has_sf_filter:
                     subfield_distribution = Counter(
-                        [i.attrib.get("code") for i in datafield if i.attrib.get("code") in subfields]
+                        [
+                            i.attrib.get("code")
+                            for i in datafield
+                            if i.attrib.get("code") in subfields
+                        ]
                     )
                 else:
                     subfield_distribution = Counter(
@@ -90,15 +105,21 @@ def parse_record(fields: list, record: ET.Element) -> dict:
                     for i, occurence in enumerate(
                         datafield.findall(f"./subfield[@code='{sf_code}']")
                     ):
-                        record_dict[
-                            "".join((field_name, " ", sf_code, f"No:{i}"))
-                        ] = occurence.text
+                        record_dict["".join((field_name, " ", sf_code, f"No:{i}"))] = (
+                            occurence.text
+                        )
     return record_dict
 
 
+
+if args.parse_hol:
+    record_tag = "holding"
+else:
+    record_tag = "record"
+
 list_of_dics = list()
 for _, element in ET.iterparse(args.input_xml):
-    if element.tag == "record":
+    if element.tag == record_tag:
         list_of_dics.append(parse_record(args.filter.split(), element))
 
 
@@ -106,6 +127,8 @@ header = list(set((k for dic in list_of_dics for k in dic)))
 sorted_header = sorted(header, key=sort_key)
 header_formatted = list()
 for field in sorted_header:
+    if args.parse_hol and field == "000_uri [1] CFNo:0":
+        field = "hol_id"
     if field.startswith("000"):
         field = field.replace("000", "leader", 1)
     if "CFNo:" in field:
