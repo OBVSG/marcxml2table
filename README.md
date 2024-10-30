@@ -36,6 +36,9 @@ E.g., `98401abc` only outputs Marc 984 $a, $b, $c fields with with first indicat
 
 For any indicator, use an asterisk sign `*` as wildcard. For the blank indicator, use the hash sign `#`.
 
+## Optional Argument
+
+User the `--parse_hol` switch to parse Marx Holdings XML Data. Since Alma cannot Export Holdings Records, the REST API endpoint to retrieve full Holdings information should be used. See [download_holdings](#download-holdings) section.
 # Example
 
 * Sample input `sample_marc.xml` with isolated 001 and 983 fields:
@@ -97,6 +100,10 @@ For any indicator, use an asterisk sign `*` as wildcard. For the blank indicator
 * The table imported into LibreOffice Calc looks like this:
 
 ![Sample Marc Data in LibreOffice Calc](doc/sample_marc_libreoffice.png)
+
+# Download Holdings
+
+Use the `download_holdings` Bash script to get all Holdings Marc XML data in one file via REST API. For usage execute `download_holdings -h`
 
 # Acknowledgement
 
