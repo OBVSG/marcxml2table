@@ -38,7 +38,8 @@ For any indicator, use an asterisk sign `*` as wildcard. For the blank indicator
 
 ## Optional Argument
 
-User the `--parse_hol` switch to parse Marx Holdings XML Data. Since Alma cannot Export Holdings Records, the REST API endpoint to retrieve full Holdings information should be used. See [download_holdings](#download-holdings) section.
+Use the `--parse_hol` switch to parse Marc Holdings XML Data. Since Alma cannot export Holdings Records, the REST API endpoint to retrieve full Holdings information should be used. See [download_holdings](#download-holdings) section.
+
 # Example
 
 * Sample input `sample_marc.xml` with isolated 001 and 983 fields:
