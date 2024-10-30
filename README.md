@@ -104,7 +104,7 @@ Use the `--parse_hol` switch to parse Marc Holdings XML Data. Since Alma cannot 
 
 # Download Holdings
 
-Use the `download_holdings` Bash script to get all Holdings Marc XML data in one file via REST API. For usage execute `download_holdings -h`
+Use the `download_holdings` Bash script to get all Holdings Marc XML data in one file via REST API. For usage execute `download_holdings -h`. Note: this script uses an OBVSG internal REST API client ("alma-js")
 
 # Acknowledgement
 
