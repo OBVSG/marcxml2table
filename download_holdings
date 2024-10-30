@@ -1,0 +1,68 @@
+#!/bin/bash
+
+set -e
+
+api_key=$1
+set_id=$2
+
+function print_usage () {
+    cat <<EOF
+    $0 <api_key> <set_id>
+
+    Download Marc XML Holding Record Objects from Alma REST API and put them in one XML file. This script uses OBVSGs alma-js client and the xmllint tool.
+    
+    Use a .scratch/ directory to temporarily store artefacts.
+
+    api_key: specifiy the api token. Note that it should have permission to read from bibs/ and conf/ areas
+    set_id: specifiy the set of the saved physical titles search from which the holdings should be exported
+EOF
+}
+
+
+if [[ $# -lt 2 ]]; then
+    print_usage;
+    exit 1;
+fi
+
+# create temp dir
+echo "create a .scratch/ directory to temporarily save REST API artefacts into it"
+
+if [ -d .scratch ]; then
+  echo ".scratch/ already exists. remove all artefacts :-P"
+  rm -r .scratch
+fi
+mkdir .scratch
+
+
+
+# export the api token
+export API_KEY=$api_key
+
+# get mms ids
+echo "get mms ids from set members.."
+alma sets $set_id get-members id  > .scratch/mmsids.txt
+
+
+# get hol records
+echo "download hol record object based on mms ids.."
+alma bibs @.scratch/mmsids.txt get-holdings retrieve write-file:dir=.scratch/ 1> /dev/null
+
+# specify output file name: <set_id> + holdings.xml
+resultfile="${2}_holdings.xml"
+
+# collect hols into one file
+echo "collect marc xml data and put it into one xml file.."
+echo "<collection>" > $resultfile 
+cat .scratch/bibs/*/holdings/*.xml >> $resultfile
+echo "</collection>" >> $resultfile 
+
+xmllint --noout $resultfile
+echo "xml data is wellformed"
+
+echo "remove .scratch/ directory"
+rm -r .scratch/
+
+
+echo "holdings downloaded into $(pwd)/$resultfile"
+
+
